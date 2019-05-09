@@ -1,32 +1,33 @@
+// #docregion ShakeCurve
+import 'dart:math';
+
+// #enddocregion ShakeCurve
 import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(LogoApp());
 
-class LogoWidget extends StatelessWidget {
-  // Leave out the height and width so it fills the animating parent
-  Widget build(BuildContext context) => Container(
-    margin: EdgeInsets.symmetric(vertical: 10),
-    child: FlutterLogo(),
-  );
-}
+class AnimatedLogo extends AnimatedWidget {
+  static final _opacityTween = Tween<double>(begin: 0.1, end: 1);
+  static final _sizeTween = Tween<double>(begin: 0, end: 300);
 
-class GrowTransition extends StatelessWidget {
-  GrowTransition({this.child, this.animation});
+  AnimatedLogo({Key key, Animation<double> animation})
+      : super(key: key, listenable: animation);
 
-  final Widget child;
-  final Animation<double> animation;
-
-  Widget build(BuildContext context) => Center(
-    child: AnimatedBuilder(
-        animation: animation,
-        builder: (context, child) => Container(
-          height: animation.value,
-          width: animation.value,
-          child: child,
+  Widget build(BuildContext context) {
+    final Animation<double> animation = listenable;
+    return Center(
+      child: Opacity(
+        opacity: _opacityTween.evaluate(animation),
+        child: Container(
+          margin: EdgeInsets.symmetric(vertical: 10),
+          height: _sizeTween.evaluate(animation),
+          width: _sizeTween.evaluate(animation),
+          child: FlutterLogo(),
         ),
-        child: child),
-  );
+      ),
+    );
+  }
 }
 
 class LogoApp extends StatefulWidget {
@@ -42,17 +43,19 @@ class _LogoAppState extends State<LogoApp> with SingleTickerProviderStateMixin {
     super.initState();
     controller =
         AnimationController(duration: const Duration(seconds: 2), vsync: this);
-    animation = Tween<double>(begin: 0, end: 300).animate(controller);
+    animation = CurvedAnimation(parent: controller, curve: Curves.easeIn);
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        controller.reverse();
+      } else if (status == AnimationStatus.dismissed) {
+        controller.forward();
+      }
+    });
     controller.forward();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GrowTransition(
-      child: LogoWidget(),
-      animation: animation,
-    );
-  }
+  Widget build(BuildContext context) => AnimatedLogo(animation: animation);
 
   @override
   void dispose() {
@@ -60,3 +63,4 @@ class _LogoAppState extends State<LogoApp> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 }
+
