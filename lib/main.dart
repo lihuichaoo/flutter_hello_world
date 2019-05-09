@@ -3,21 +3,30 @@ import 'package:flutter/material.dart';
 
 void main() => runApp(LogoApp());
 
-class AnimatedLogo extends AnimatedWidget {
-  AnimatedLogo({Key key, Animation<double> animation})
-      : super(key: key, listenable: animation);
+class LogoWidget extends StatelessWidget {
+  // Leave out the height and width so it fills the animating parent
+  Widget build(BuildContext context) => Container(
+    margin: EdgeInsets.symmetric(vertical: 10),
+    child: FlutterLogo(),
+  );
+}
 
-  Widget build(BuildContext context) {
-    final Animation<double> animation = listenable;
-    return Center(
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 10),
-        height: animation.value,
-        width: animation.value,
-        child: FlutterLogo(),
-      ),
-    );
-  }
+class GrowTransition extends StatelessWidget {
+  GrowTransition({this.child, this.animation});
+
+  final Widget child;
+  final Animation<double> animation;
+
+  Widget build(BuildContext context) => Center(
+    child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) => Container(
+          height: animation.value,
+          width: animation.value,
+          child: child,
+        ),
+        child: child),
+  );
 }
 
 class LogoApp extends StatefulWidget {
@@ -34,17 +43,15 @@ class _LogoAppState extends State<LogoApp> with SingleTickerProviderStateMixin {
     controller =
         AnimationController(duration: const Duration(seconds: 2), vsync: this);
     animation = Tween<double>(begin: 0, end: 300).animate(controller);
-    /* animation.addListener(() {
-      setState(() {
-        // The state that has changed here is the animation object’s value.
-      });
-    }); */
     controller.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedLogo(animation: animation);
+    return GrowTransition(
+      child: LogoWidget(),
+      animation: animation,
+    );
   }
 
   @override
@@ -53,4 +60,3 @@ class _LogoAppState extends State<LogoApp> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 }
-
