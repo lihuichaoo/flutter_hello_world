@@ -1,14 +1,10 @@
-// #docregion ShakeCurve
-import 'dart:math';
-
-// #enddocregion ShakeCurve
 import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 
 void main() => runApp(LogoApp());
 
 class AnimatedLogo extends AnimatedWidget {
-  static final _opacityTween = Tween<double>(begin: 0.1, end: 1);
   static final _sizeTween = Tween<double>(begin: 0, end: 300);
 
   AnimatedLogo({Key key, Animation<double> animation})
@@ -17,14 +13,11 @@ class AnimatedLogo extends AnimatedWidget {
   Widget build(BuildContext context) {
     final Animation<double> animation = listenable;
     return Center(
-      child: Opacity(
-        opacity: _opacityTween.evaluate(animation),
-        child: Container(
-          margin: EdgeInsets.symmetric(vertical: 10),
-          height: _sizeTween.evaluate(animation),
-          width: _sizeTween.evaluate(animation),
-          child: FlutterLogo(),
-        ),
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 10),
+        height: _sizeTween.evaluate(animation),
+        width: _sizeTween.evaluate(animation),
+        child: FlutterLogo(),
       ),
     );
   }
@@ -41,17 +34,17 @@ class _LogoAppState extends State<LogoApp> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    controller =
-        AnimationController(duration: const Duration(seconds: 2), vsync: this);
-    animation = CurvedAnimation(parent: controller, curve: Curves.easeIn);
-    animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        controller.reverse();
-      } else if (status == AnimationStatus.dismissed) {
-        controller.forward();
-      }
-    });
-    controller.forward();
+    controller = AnimationController.unbounded(
+        duration: const Duration(seconds: 10),
+        vsync: this);
+    controller.animateWith(
+        GravitySimulation(
+            10, /// 加速度
+            0, /// 初始距离
+            1000, /// 距离
+            1 /// 速度
+        ));
+    animation = controller;
   }
 
   @override
