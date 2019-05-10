@@ -32,25 +32,25 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   double x = 0.0;
   double y = 0.0;
 
-  void _incrementCounter(PointerDownEvent details) {
+  void _incrementCounter(TapUpDetails details) {
     setState(() {
       _enterCounter++;
     });
   }
-  void _decrementCounter(PointerUpEvent details) {
+  void _decrementCounter(TapDownDetails details) {
     setState(() {
       _exitCounter++;
     });
   }
-  void _updateLocation(PointerMoveEvent details) {
+  void _updateLocation(DragUpdateDetails details) {
     setState(() {
-      x = details.position.dx;
-      y = details.position.dy;
+      x = details.delta.dx;
+      y = details.delta.dy;
     });
   }
-  void _cancelEventHandler(PointerCancelEvent details) {
+  void _longPressEventHandler() {
     setState(() {
-      _exitCounter += 10;
+      _exitCounter += 5;
     });
   }
 
@@ -59,11 +59,11 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints.tight(Size(300.0, 200.0)),
-        child: Listener(
-          onPointerDown: _incrementCounter,
-          onPointerMove: _updateLocation,
-          onPointerUp: _decrementCounter,
-          onPointerCancel: _cancelEventHandler,
+        child: GestureDetector(
+          onTapUp: _incrementCounter,
+          onTapDown: _decrementCounter,
+          onPanUpdate: _updateLocation,
+          onLongPress: _longPressEventHandler,
           child: Container(
             color: Colors.lightBlueAccent,
             child: Column(
@@ -73,7 +73,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
                 Text('$_enterCounter Entries\n$_exitCounter Exits',
                   style: Theme.of(context).textTheme.display1,
                 ),
-                Text('The cursor is here: (${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})',),
+                Text('The cursor offset is here: (${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})',),
               ],
             ),
           ),
