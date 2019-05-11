@@ -49,21 +49,20 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     });
   }
   void _longPressEventHandler() {
-    Navigator.push(context, PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (BuildContext context, _, __) {
-          return Center(child: Text('My PageRoute'));
-        },
-        transitionsBuilder: (_, Animation<double> animation, __, Widget child) {
-          return FadeTransition(
-            opacity: animation,
-            child: RotationTransition(
-              turns: Tween<double>(begin: 0.5, end: 1.0).animate(animation),
-              child: child,
-            ),
-          );
-        }
-    ));
+    showDialog(context: context, builder: (context) {
+      return AlertDialog(
+        title: Text("Alert"),
+        content: Text("Flutter Alert Dialog"),
+        actions: <Widget>[
+          FlatButton(
+              child: Text("关闭"),
+              onPressed: () {
+                Navigator.pop(context);
+              }
+          ),
+        ],
+      );
+    });
     setState(() {
       _exitCounter += 5;
     });
