@@ -70,32 +70,36 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
       _enterCounter++;
     });
   }
+
   void _decrementCounter(TapDownDetails details) {
     setState(() {
       _exitCounter++;
     });
   }
+
   void _updateLocation(DragUpdateDetails details) {
     setState(() {
       x = details.delta.dx;
       y = details.delta.dy;
     });
   }
+
   void _longPressEventHandler() {
-    showDialog(context: context, builder: (context) {
-      return AlertDialog(
-        title: Text("Alert"),
-        content: Text("Flutter Alert Dialog"),
-        actions: <Widget>[
-          FlatButton(
-              child: Text("关闭"),
-              onPressed: () {
-                Navigator.pop(context);
-              }
-          ),
-        ],
-      );
-    });
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("Alert"),
+            content: Text("Flutter Alert Dialog"),
+            actions: <Widget>[
+              FlatButton(
+                  child: Text("关闭"),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  }),
+            ],
+          );
+        });
     setState(() {
       _exitCounter += 5;
     });
@@ -117,10 +121,13 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text('You have pointed at this box this many times:'),
-                Text('$_enterCounter Entries\n$_exitCounter Exits',
+                Text(
+                  '$_enterCounter Entries\n$_exitCounter Exits',
                   style: Theme.of(context).textTheme.display1,
                 ),
-                Text('The cursor offset is here: (${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})',),
+                Text(
+                  'The cursor offset is here: (${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})',
+                ),
               ],
             ),
           ),
@@ -129,5 +136,3 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     );
   }
 }
-
-
