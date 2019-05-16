@@ -1,135 +1,100 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:async';
-import 'dart:io';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:redux/redux.dart';
 
-void main() => runApp(MyApp());
+// One simple action: Increment
+enum Actions { Increment }
 
-class CounterStorage {
-  Future<String> get _localPath async {
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
-  }
-
-  Future<File> get _localFile async {
-    final path = await _localPath;
-    return File('$path/counter.txt');
-  }
-
-  Future<int> readCounter() async {
-    try {
-      final file = await _localFile;
-      // Read the file
-      String contents = await file.readAsString();
-      return int.parse(contents);
-    } catch (e) {
-      // If encountering an error, return 0
-      return 0;
-    }
-  }
-
-  Future<File> writeCounter(int counter) async {
-    final file = await _localFile;
-    // Write the file
-    return file.writeAsString('$counter');
-  }
+// The reducer, which takes the previous count and increments it in response
+// to an Increment action.
+int counterReducer(int state, dynamic action) {
+  return action == Actions.Increment ? state+1 : state;
 }
 
-/// This Widget is the main application widget.
-class MyApp extends StatelessWidget {
-  static const String _title = 'Flutter Code Sample';
+void main() {
+  // Create your store as a final variable in a base Widget. This works better
+  // with Hot Reload than creating it directly in the `build` function.
+  final store = Store<int>(counterReducer, initialState: 0);
+
+  runApp(FlutterReduxApp(
+    title: 'Flutter Redux Demo',
+    store: store,
+  ));
+}
+
+class FlutterReduxApp extends StatelessWidget {
+  final Store<int> store;
+  final String title;
+
+  FlutterReduxApp({Key key, this.store, this.title}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: _title,
-      home: Scaffold(
-        appBar: AppBar(title: Text(_title)),
-        body: MyStatefulWidget(),
-      ),
-    );
-  }
-}
-
-class MyStatefulWidget extends StatefulWidget {
-  MyStatefulWidget({Key key}) : super(key: key);
-
-  @override
-  _MyStatefulWidgetState createState() => _MyStatefulWidgetState();
-}
-
-class _MyStatefulWidgetState extends State<MyStatefulWidget> {
-  int _enterCounter = 0;
-  int _exitCounter = 0;
-  double x = 0.0;
-  double y = 0.0;
-
-  void _incrementCounter(TapUpDetails details) {
-    setState(() {
-      _enterCounter++;
-    });
-  }
-
-  void _decrementCounter(TapDownDetails details) {
-    setState(() {
-      _exitCounter++;
-    });
-  }
-
-  void _updateLocation(DragUpdateDetails details) {
-    setState(() {
-      x = details.delta.dx;
-      y = details.delta.dy;
-    });
-  }
-
-  void _longPressEventHandler() {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text("Alert"),
-            content: Text("Flutter Alert Dialog"),
-            actions: <Widget>[
-              FlatButton(
-                  child: Text("关闭"),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  }),
-            ],
-          );
-        });
-    setState(() {
-      _exitCounter += 5;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints.tight(Size(300.0, 200.0)),
-        child: GestureDetector(
-          onTapUp: _incrementCounter,
-          onTapDown: _decrementCounter,
-          onPanUpdate: _updateLocation,
-          onLongPress: _longPressEventHandler,
-          child: Container(
-            color: Colors.lightBlueAccent,
+    // The StoreProvider should wrap your MaterialApp or WidgetsApp. This will
+    // ensure all routes have access to the store.
+    return StoreProvider<int>(
+      // Pass the store to the StoreProvider. Any ancestor `StoreConnector`
+      // Widgets will find and use this value as the `Store`.
+      store: store,
+      child: MaterialApp(
+        theme: ThemeData.dark(),
+        title: title,
+        home: Scaffold(
+          appBar: AppBar(
+            title: Text(title),
+          ),
+          body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text('You have pointed at this box this many times:'),
+              children: [
                 Text(
-                  '$_enterCounter Entries\n$_exitCounter Exits',
-                  style: Theme.of(context).textTheme.display1,
+                  'You have pushed the button this many times:',
                 ),
-                Text(
-                  'The cursor offset is here: (${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})',
-                ),
+                // . . . .
+                // Connect the Store to a Text Widget that renders the current
+                // count.
+                //
+                // We'll wrap the Text Widget in a `StoreConnector` Widget. The
+                // `StoreConnector` will find the `Store` from the nearest
+                // `StoreProvider` ancestor, convert it into a String of the
+                // latest count, and pass that String  to the `builder` function
+                // as the `count`.
+                //
+                // Every time the button is tapped, an action is dispatched and
+                // run through the reducer. After the reducer updates the state,
+                // the Widget will be automatically rebuilt with the latest
+                // count. No need to manually manage subscriptions or Streams!
+                StoreConnector<int, String>(
+                  converter: (store) => store.state.toString(),
+                  builder: (context, count) {
+                    return Text(
+                      count,
+                      style: Theme.of(context).textTheme.display1,
+                    );
+                  },
+                )
               ],
             ),
+          ),
+          // Connect the Store to a FloatingActionButton. In this case, we'll
+          // use the Store to build a callback that with dispatch an Increment
+          // Action.
+          //
+          // Then, we'll pass this callback to the button's `onPressed` handler.
+          floatingActionButton: StoreConnector<int, VoidCallback>(
+            converter: (store) {
+              // Return a `VoidCallback`, which is a fancy name for a function
+              // with no parameters. It only dispatches an Increment action.
+              return () => store.dispatch(Actions.Increment);
+            },
+            builder: (context, callback) {
+              return FloatingActionButton(
+                // Attach the `callback` to the `onPressed` attribute
+                onPressed: callback,
+                tooltip: 'Increment',
+                child: Icon(Icons.add),
+              );
+            },
           ),
         ),
       ),
