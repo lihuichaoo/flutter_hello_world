@@ -9,16 +9,17 @@ class MyApp extends StatelessWidget {
     final themeValueNotifier = ThemeValueNotifier();
     return ValueListenableProvider<ThemeData>(
       builder: (_) => themeValueNotifier,
-      child: Consumer<ThemeData>(builder: (context, value, child) {
-        return MaterialApp(
-          title: 'Flutter Demo',
-          theme: value,
-          home: ChangeNotifierProvider<Counter>(
-            builder: (_) => Counter(0),
-            child: HomePage(themeValueNotifier),
-          ),
-        );
-      }),
+      // 错误：当返回true时，MaterialApp不会重建，因并未成为InheritedWidget的依赖
+      updateShouldNotify: (pre, cur) => (pre != cur),
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        // 错误：MaterialApp不会重建，因并未成为InheritedWidget的依赖
+        theme: themeValueNotifier.value,
+        home: ChangeNotifierProvider<Counter>(
+          builder: (_) => Counter(0),
+          child: HomePage(themeValueNotifier),
+        ),
+      ),
     );
   }
 }
@@ -55,6 +56,7 @@ class ThemeValueNotifier extends ValueNotifier<ThemeData> {
 
 class HomePage extends StatelessWidget {
   final ThemeValueNotifier _themeValueNotifier;
+
   HomePage(this._themeValueNotifier);
 
   @override
