@@ -1,161 +1,81 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'package:bloc/bloc.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+void main() => runApp(MyApp());
 
-class SimpleBlocDelegate extends BlocDelegate {
-  @override
-  void onEvent(Bloc bloc, Object event) {
-    super.onEvent(bloc, event);
-    print(event);
-  }
-
-  @override
-  void onTransition(Bloc bloc, Transition transition) {
-    super.onTransition(bloc, transition);
-    print(transition);
-  }
-
-  @override
-  void onError(Bloc bloc, Object error, StackTrace stacktrace) {
-    super.onError(bloc, error, stacktrace);
-    print(error);
-  }
-}
-
-void main() {
-  BlocSupervisor().delegate = SimpleBlocDelegate();
-  runApp(App());
-}
-
-class App extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() => _AppState();
-}
-
-class _AppState extends State<App> {
-  final CounterBloc _counterBloc = CounterBloc();
-  final ThemeBloc _themeBloc = ThemeBloc();
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocProviderTree(
-      blocProviders: [
-        BlocProvider<CounterBloc>(bloc: _counterBloc),
-        BlocProvider<ThemeBloc>(bloc: _themeBloc)
-      ],
-      child: BlocBuilder(
-        bloc: _themeBloc,
-        builder: (_, ThemeData theme) {
-          return MaterialApp(
-            title: 'Flutter Demo',
-            home: CounterPage(),
-            theme: theme,
-          );
-        },
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
+      home: ChangeNotifierProvider<Counter>(
+        builder: (_) => Counter(0),
+        child: HomePage(),
+      )
     );
   }
+}
 
-  @override
-  void dispose() {
-    _counterBloc.dispose();
-    _themeBloc.dispose();
-    super.dispose();
+class Counter with ChangeNotifier {
+  int _counter;
+
+  Counter(this._counter);
+
+  getCounter() => _counter;
+  setCounter(int counter) => _counter = counter;
+
+  void increment() {
+    _counter++;
+    notifyListeners();
+  }
+
+  void decrement() {
+    _counter--;
+    notifyListeners();
   }
 }
 
-class CounterPage extends StatelessWidget {
+class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final CounterBloc _counterBloc = BlocProvider.of<CounterBloc>(context);
-    final ThemeBloc _themeBloc = BlocProvider.of<ThemeBloc>(context);
-
+    final counter = Provider.of<Counter>(context);
     return Scaffold(
-      appBar: AppBar(title: Text('Counter')),
-      body: BlocBuilder<CounterEvent, int>(
-        bloc: _counterBloc,
-        builder: (BuildContext context, int count) {
-          return Center(
-            child: Text(
-              '$count',
-              style: TextStyle(fontSize: 24.0),
+      appBar: AppBar(
+        title: Text("Provider Demo"),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'You have pushed the button this many times:',
             ),
-          );
-        },
+            Text(
+              '${counter.getCounter()}',
+              style: Theme.of(context).textTheme.display1,
+            ),
+          ],
+        ),
       ),
       floatingActionButton: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.0),
-            child: FloatingActionButton(
-              child: Icon(Icons.add),
-              onPressed: () {
-                _counterBloc.dispatch(CounterEvent.increment);
-              },
-            ),
+          FloatingActionButton(
+            onPressed: counter.increment,
+            tooltip: 'Increment',
+            child: Icon(Icons.add),
           ),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.0),
-            child: FloatingActionButton(
-              child: Icon(Icons.remove),
-              onPressed: () {
-                _counterBloc.dispatch(CounterEvent.decrement);
-              },
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.0),
-            child: FloatingActionButton(
-              child: Icon(Icons.update),
-              onPressed: () {
-                _themeBloc.dispatch(ThemeEvent.toggle);
-              },
-            ),
-          ),
+          SizedBox(height: 10),
+          FloatingActionButton(
+            onPressed: counter.decrement,
+            tooltip: 'Increment',
+            child: Icon(Icons.remove),
+          )
         ],
       ),
     );
-  }
-}
-
-enum CounterEvent { increment, decrement }
-
-class CounterBloc extends Bloc<CounterEvent, int> {
-  @override
-  int get initialState => 0;
-
-  @override
-  Stream<int> mapEventToState(CounterEvent event) async* {
-    switch (event) {
-      case CounterEvent.decrement:
-        yield currentState - 1;
-        break;
-      case CounterEvent.increment:
-        yield currentState + 1;
-        break;
-    }
-  }
-}
-
-enum ThemeEvent { toggle }
-
-class ThemeBloc extends Bloc<ThemeEvent, ThemeData> {
-  @override
-  ThemeData get initialState => ThemeData.light();
-
-  @override
-  Stream<ThemeData> mapEventToState(ThemeEvent event) async* {
-    switch (event) {
-      case ThemeEvent.toggle:
-        yield currentState == ThemeData.dark()
-            ? ThemeData.light()
-            : ThemeData.dark();
-        break;
-    }
   }
 }
