@@ -6,15 +6,19 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: ChangeNotifierProvider<Counter>(
-        builder: (_) => Counter(0),
-        child: HomePage(),
-      )
+    final themeValueNotifier = ThemeValueNotifier();
+    return ValueListenableProvider<ThemeData>(
+      builder: (_) => themeValueNotifier,
+      child: Consumer<ThemeData>(builder: (context, value, child) {
+        return MaterialApp(
+          title: 'Flutter Demo',
+          theme: value,
+          home: ChangeNotifierProvider<Counter>(
+            builder: (_) => Counter(0),
+            child: HomePage(themeValueNotifier),
+          ),
+        );
+      }),
     );
   }
 }
@@ -25,6 +29,7 @@ class Counter with ChangeNotifier {
   Counter(this._counter);
 
   getCounter() => _counter;
+
   setCounter(int counter) => _counter = counter;
 
   void increment() {
@@ -38,7 +43,20 @@ class Counter with ChangeNotifier {
   }
 }
 
+class ThemeValueNotifier extends ValueNotifier<ThemeData> {
+  ThemeValueNotifier({ThemeData data})
+      : super(data == null ? ThemeData.light() : ThemeData.dark());
+
+  void toggle() {
+    this.value =
+        this.value == ThemeData.dark() ? ThemeData.light() : ThemeData.dark();
+  }
+}
+
 class HomePage extends StatelessWidget {
+  final ThemeValueNotifier _themeValueNotifier;
+  HomePage(this._themeValueNotifier);
+
   @override
   Widget build(BuildContext context) {
     final counter = Provider.of<Counter>(context);
@@ -73,7 +91,12 @@ class HomePage extends StatelessWidget {
             onPressed: counter.decrement,
             tooltip: 'Increment',
             child: Icon(Icons.remove),
-          )
+          ),
+          SizedBox(height: 10),
+          FloatingActionButton(
+            child: Icon(Icons.update),
+            onPressed: _themeValueNotifier.toggle,
+          ),
         ],
       ),
     );
