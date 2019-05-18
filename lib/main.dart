@@ -1,103 +1,91 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:scoped_model/scoped_model.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp(
+    model: CounterModel(),
+  ));
+}
 
 class MyApp extends StatelessWidget {
+  final CounterModel model;
+
+  const MyApp({Key key, @required this.model}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final themeValueNotifier = ThemeValueNotifier();
-    return ValueListenableProvider<ThemeData>(
-      builder: (_) => themeValueNotifier,
-      child: Consumer<ThemeData>(builder: (context, value, child) {
-        return MaterialApp(
-          title: 'Flutter Demo',
-          theme: value,
-          home: ChangeNotifierProvider<Counter>(
-            builder: (_) => Counter(0),
-            child: HomePage(themeValueNotifier),
-          ),
-        );
-      }),
+    // At the top level of our app, we'll, create a ScopedModel Widget. This
+    // will provide the CounterModel to all children in the app that request it
+    // using a ScopedModelDescendant.
+    return ScopedModel<CounterModel>(
+      model: model,
+      child: MaterialApp(
+        title: 'Scoped Model Demo',
+        home: CounterHome('Scoped Model Demo'),
+      ),
     );
   }
 }
 
-class Counter with ChangeNotifier {
-  int _counter;
+// Start by creating a class that has a counter and a method to increment it.
+//
+// Note: It must extend from Model.
+class CounterModel extends Model {
+  int _counter = 0;
 
-  Counter(this._counter);
-
-  getCounter() => _counter;
-
-  setCounter(int counter) => _counter = counter;
+  int get counter => _counter;
 
   void increment() {
+    // First, increment the counter
     _counter++;
-    notifyListeners();
-  }
 
-  void decrement() {
-    _counter--;
+    // Then notify all the listeners.
     notifyListeners();
   }
 }
 
-class ThemeValueNotifier extends ValueNotifier<ThemeData> {
-  ThemeValueNotifier({ThemeData data})
-      : super(data == null ? ThemeData.light() : ThemeData.dark());
+class CounterHome extends StatelessWidget {
+  final String title;
 
-  void toggle() {
-    this.value =
-        this.value == ThemeData.dark() ? ThemeData.light() : ThemeData.dark();
-  }
-}
-
-class HomePage extends StatelessWidget {
-  final ThemeValueNotifier _themeValueNotifier;
-  HomePage(this._themeValueNotifier);
+  CounterHome(this.title);
 
   @override
   Widget build(BuildContext context) {
-    final counter = Provider.of<Counter>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Provider Demo"),
+        title: Text(title),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '${counter.getCounter()}',
-              style: Theme.of(context).textTheme.display1,
+            Text('You have pushed the button this many times:'),
+            // Create a ScopedModelDescendant. This widget will get the
+            // CounterModel from the nearest parent ScopedModel<CounterModel>.
+            // It will hand that CounterModel to our builder method, and
+            // rebuild any time the CounterModel changes (i.e. after we
+            // `notifyListeners` in the Model).
+            ScopedModelDescendant<CounterModel>(
+              builder: (context, child, model) {
+                return Text(
+                  model.counter.toString(),
+                  style: Theme.of(context).textTheme.display1,
+                );
+              },
             ),
           ],
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          FloatingActionButton(
-            onPressed: counter.increment,
+      // Use the ScopedModelDescendant again in order to use the increment
+      // method from the CounterModel
+      floatingActionButton: ScopedModelDescendant<CounterModel>(
+        builder: (context, child, model) {
+          return FloatingActionButton(
+            onPressed: model.increment,
             tooltip: 'Increment',
             child: Icon(Icons.add),
-          ),
-          SizedBox(height: 10),
-          FloatingActionButton(
-            onPressed: counter.decrement,
-            tooltip: 'Increment',
-            child: Icon(Icons.remove),
-          ),
-          SizedBox(height: 10),
-          FloatingActionButton(
-            child: Icon(Icons.update),
-            onPressed: _themeValueNotifier.toggle,
-          ),
-        ],
+          );
+        },
       ),
     );
   }
