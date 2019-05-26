@@ -34,6 +34,7 @@ dependencies:
   flutter_redux: ^0.5.3
 
 dev_dependencies:
+  test: any
   flutter_test:
     sdk: flutter
 
